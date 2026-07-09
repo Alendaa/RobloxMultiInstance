@@ -49,23 +49,21 @@ get_process_handles :: proc(pid: u32) -> []lib.SYSTEM_HANDLE_TABLE_ENTRY_INFO_EX
             &buffer_size,
         )
 
-        if status == 0 {
-            info := cast(^lib.SYSTEM_HANDLE_INFORMATION_EX)raw_data(buffer)
-            result := make([dynamic]lib.SYSTEM_HANDLE_TABLE_ENTRY_INFO_EX, context.temp_allocator)
+        if status != 0 && status != 0xC0000004 {
+            fmt.panicf("get_process_handles error: %x", status)
+        }
 
-            for i in 0..=info.NumberOfHandles {
-                handle := info.Handles[i]
-                if u32(handle.UniqueProcessId) == pid {
-                    append(&result, handle)
-                }
+        info := cast(^lib.SYSTEM_HANDLE_INFORMATION_EX)raw_data(buffer)
+        result := make([dynamic]lib.SYSTEM_HANDLE_TABLE_ENTRY_INFO_EX, context.temp_allocator)
+
+        for i in 0..=info.NumberOfHandles {
+            handle := info.Handles[i]
+            if u32(handle.UniqueProcessId) == pid {
+                append(&result, handle)
             }
-
-            return result[:]
         }
 
-        if status != 0xC0000004 {
-            fmt.panicf("get_process_handles erro: %x", status)
-        }
+        return result[:]
     }
 }
 
