@@ -40,6 +40,7 @@ get_process_handles :: proc(pid: u32) -> []lib.SYSTEM_HANDLE_TABLE_ENTRY_INFO_EX
 
     for {
         buffer := make([]u64, buffer_size)
+        defer delete(buffer)
 
         status := lib.NtQuerySystemInformation(
             lib.SystemExtendedHandleInformation,
@@ -59,11 +60,9 @@ get_process_handles :: proc(pid: u32) -> []lib.SYSTEM_HANDLE_TABLE_ENTRY_INFO_EX
                 }
             }
 
-            delete(buffer)
             return result[:]
         }
 
-        delete(buffer)
         if status != 0xC0000004 {
             fmt.panicf("get_process_handles erro: %x", status)
         }
